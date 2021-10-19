@@ -1,9 +1,9 @@
 
-#Gonna throw everything important for interfacing purposes up here. All the functions here are compiled together into 
+#Gonna throw everything important for interfacing purposes up here. All the functions here are compiled together into
 #that final, computePCIT(Pitch Classes In Time) function. This function will input an audio information as well as the desired
 #block and hop sizes. The output will be 1) An array of blocks where each block contain the four most prevalent notes as type
 #numpy_str, 2) An array of blocks where each value in the block corresponds to the individual prevalence of their corresponding
-#notes, and 3) An array of timestamps for each block. 
+#notes, and 3) An array of timestamps for each block.
 
 
 #An example of an output would be pc,pcp,t: Where pc[0] could be ['G', 'E', 'C', 'B'] and pcp[0] could be [1.,0.80,0.77,0.11]
@@ -31,7 +31,7 @@ note = {
         11: "Ab"
     }
 def noteName(f,bass,name):
-    #This function will get the name of a note given a frequency as well as information pertaining to 
+    #This function will get the name of a note given a frequency as well as information pertaining to
     #what our bass note frequency is
     nAwayFromA = np.mod(np.round(12*np.log2(f/bass)),12)
     freqs = dict((v, k) for k, v in note.items())
@@ -55,7 +55,11 @@ def computeChromagram(x,blockSize,hopSize,fs):
         #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
         #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
         #far from a centralized note
-        qFactor = 1 - abs(12*np.log2(f[i]/bassf) - np.round(12*np.log2(f[i]/bassf)))
+        if (bassf != 0):
+            qFactor = 1 - abs(12*np.log2(f[i]/bassf) - np.round(12*np.log2(f[i]/bassf)))
+        else:
+            qFactor = 1 - np.abs(12*np.log2(f[i]) - np.round(12*np.log2(f[i])))
+
         a[i] = a[i] * qFactor
     return [notes,t,a,f]
 def computePCP(notes,a):
@@ -85,4 +89,3 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
     pitchClasses = pitchClasses[1:]
     pitchClassPowers = pitchClassPowers[1:]
     return [pitchClasses,pitchClassPowers,t]
-        
