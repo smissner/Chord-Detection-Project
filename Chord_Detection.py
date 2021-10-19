@@ -47,8 +47,8 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     bassf = f[np.where(a>.1)[0][0]]
     if bassf == 0:
-        if np.where(a>.1).size < 2:
-                bassf = .00001
+        #if np.where(a>.1).size < 2:
+        bassf = .00001
         #else: ##Leaving this out for now, will work on it later, this for now shouldn't cause too much issue
          #       bassf = f[np.where(a>.1)[1][0]]
     bassnote = noteName(bassf,440,"A")
