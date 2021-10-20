@@ -63,6 +63,7 @@ def evaluate_isophonics_wav(csvF, wfilename):
     (fs, signal) = wavfile.read(wfilename)
     #print(fs)
     #print(len(data))
+    signal = np.mean(signal, axis=0)
     (times, chords) = parse_isophonics_csv(csvF)
 
     blocks = 1024
