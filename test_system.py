@@ -4,6 +4,86 @@ import os
 import numpy as np
 import scipy as sp
 from scipy.io import wavfile
+
+
+## this section is for chordify  / mcgill billboard integration, put on the backburner for now
+
+"""
+import jams
+import subprocess
+from pytube import YouTube
+import os
+
+def download_wav(filename):
+    jam = jams.load(filename)
+    link = jam['file_metadata']['identifiers']['youtube_url']
+
+    #Youtube pull
+    print(link)
+    yt = YouTube(link)
+
+    video = yt.streams.filter(only_audio=True).first()
+
+    out_file = video.download(output_path=".")
+
+    base, ext = os.path.splitext(out_file)
+    new_file = base.translate({' ': None }) + '.wav'
+    #os.rename(out_file, new_file)
+
+    subprocess.call(['ffmpeg', '-i', out_file ,
+                       new_file])
+
+fl = '12.jams'
+#download_wav(fl)
+"""
+
+
+#This section is for integration with isophonics dataset.  Primary section now.
+## http://isophonics.net/content/reference-annotations
+
+def parse_isophonics_csv(filename):
+    times = []
+    chords = []
+    with open(filename) as file:
+        line = file.readline()
+        while line:
+            arr = line.strip().split('\t')
+            r = np.array([float(i) for i in arr[0:2]])
+            chords.append(arr[2])
+            #print(arr[2])
+            times.append(r)
+            line = file.readline()
+
+    times = np.array(times)
+    chords = np.array(chords)
+    return (times, chords)
+
+def evaluate_isophonics_wav(csvF, wfilename):
+
+    (fs, signal) = wavfile.read(wfilename)
+    #print(fs)
+    #print(len(data))
+    (times, chords) = parse_isophonics_csv(csvF)
+
+    blocks = 1024
+    hops = blocks
+
+    data = computePCIT(signal, blocks, hops, fs)
+    print('annotated data: ')
+    print(chords)
+    print('projected data: ')
+    print(data)
+
+txt = './chords/stl.txt'
+wav = './chords/stl.wav'
+evaluate_isophonics_wav(txt, wav)
+
+#def test2():
+
+
+#test('./baselineDataset')
+
+
 """
 def test(complete_path_to_data_folder):
     searchPath = complete_path_to_data_folder
@@ -60,73 +140,3 @@ for stmt in g:
     pprint.pprint(stmt)
 
 """
-
-## this section is for
-import jams
-import subprocess
-from pytube import YouTube
-import os
-
-def download_wav(filename):
-    jam = jams.load(filename)
-    link = jam['file_metadata']['identifiers']['youtube_url']
-
-    #Youtube pull
-    print(link)
-    yt = YouTube(link)
-
-    video = yt.streams.filter(only_audio=True).first()
-
-    out_file = video.download(output_path=".")
-
-    base, ext = os.path.splitext(out_file)
-    new_file = base.translate({' ': None }) + '.wav'
-    #os.rename(out_file, new_file)
-
-    subprocess.call(['ffmpeg', '-i', out_file ,
-                       new_file])
-
-fl = '12.jams'
-#download_wav(fl)
-
-
-## http://isophonics.net/content/reference-annotations
-
-def parse_isophonics_csv(filename):
-    times = []
-    chords = []
-    with open(filename) as file:
-        line = file.readline()
-        while line:
-            arr = line.strip().split('\t')
-            r = np.array([float(i) for i in arr[0:2]])
-            chords.append(arr[2])
-            #print(arr[2])
-            times.append(r)
-            line = file.readline()
-
-    times = np.array(times)
-    chords = np.array(chords)
-    return (times, chords)
-
-def evaluate_isophonics_wav(csvF, wfilename):
-
-    (fs, signal) = wavfile.read(wfilename)
-    #print(fs)
-    #print(len(data))
-    (times, chords) = parse_isophonics_csv(csvF)
-
-    blocks = 1024
-    hops = blocks
-
-    data = computePCIT(signal, blocks, hops, fs)
-    print(data)
-
-txt = 'stl.txt'
-wav = 'stl.wav'
-evaluate_isophonics_wav(txt, wav)
-
-#def test2():
-
-
-#test('./baselineDataset')
