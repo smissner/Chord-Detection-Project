@@ -46,9 +46,9 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     bassf = f[np.where(a>.1)[0][0]]
-    if bassf == 0:
+    if bassf <= .1:
         #if np.where(a>.1).size < 2:
-        bassf = .00001
+        bassf = .001
         #else: ##Leaving this out for now, will work on it later, this for now shouldn't cause too much issue
          #       bassf = f[np.where(a>.1)[1][0]]
     bassnote = noteName(bassf,440,"A")
@@ -60,11 +60,8 @@ def computeChromagram(x,blockSize,hopSize,fs):
         #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
         #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
         #far from a centralized note
-        if (bassf != 0):
-            qFactor = 1 - abs(12*np.log2(f[i]/bassf) - np.round(12*np.log2(f[i]/bassf)))
-        else:
-            qFactor = 1 - np.abs(12*np.log2(f[i]) - np.round(12*np.log2(f[i])))
 
+        qFactor = 1 - abs(12*np.log2(f[i]/bassf) - np.round(12*np.log2(f[i]/bassf)))
         a[i] = a[i] * qFactor
     return [notes,t,a,f]
 def computePCP(notes,a):
