@@ -42,12 +42,13 @@ fl = '12.jams'
 ## http://isophonics.net/content/reference-annotations
 
 def parse_isophonics_csv(filename):
+    splitC = ' '
     times = []
     chords = []
     with open(filename) as file:
         line = file.readline()
         while line:
-            arr = line.strip().split('\t')
+            arr = line.strip().split(splitC)
             r = np.array([float(i) for i in arr[0:2]])
             chords.append(arr[2])
             #print(arr[2])
@@ -74,10 +75,40 @@ def evaluate_isophonics_wav(csvF, wfilename):
     print(chords)
     print('projected data: ')
     print(data)
+    #TODO: implement chord checking once I run sam's algo.
 
 txt = './chords/stl.txt'
 wav = './chords/stl.wav'
-evaluate_isophonics_wav(txt, wav)
+#evaluate_isophonics_wav(txt, wav)
+
+
+def beatles_check_album(searchPath):
+    anont = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/C4DM_beatles_transcriptions"
+    albumStem = searchPath.split('/')[-1]
+    print(albumStem)
+    for root, dir, files in os.walk(searchPath):
+        for waveFile in filter(lambda a: 'wav' in a, files):
+            songname = waveFile.split('.')[0]
+            songname = songname.replace('-', '_-_', 1)
+            evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
+
+def check_all_albums():
+    base = './QMUL_beatles'
+    for root, dir, files in os.walk(base):
+        #albumStem = searchPath.split('/')[-1]
+        print(root)
+        for waveFile in filter(lambda a: 'wav' in a, files):
+            songname = waveFile.split('.')[0]
+            songname = songname.replace('-', '_-_', 1)
+            evaluate_isophonics_wav(f"./QMUL_beatles/C4DM_beatles_transcriptions/{root.split('/')[2]}/{songname}.lab", f"{root}/{waveFile}")
+
+
+            #break;
+
+
+#searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
+#beatles_check_album(searchPath)
+check_all_albums()
 
 #def test2():
 
