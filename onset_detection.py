@@ -41,63 +41,21 @@ def onset_detect(sound, thresh=.8):
     truth_detect= [True if x else False for x in sound]
     return detect, truth_detect
 
-def set_threshold(ac, pts=10): # gives option to pick the N largest onsets instead of setting with a threshold
+def set_threshold(ac, pts=10):
     ac=np.sort(ac)[::-1]
     set_thresh=ac[pts-1]
     return set_thresh
 
-def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
-
-    # this function takes in the raw audio file and either determines an optimal window length depending on the spacing between all of the onsets 
-    # or returns window  lengths for each window for chord detection based on spacing between all of the onsets
-        # constant window length done, varying window length in progress
-
-    # leave const_block on for now, 0 is for if we can figure out how to do non constant block lengths
-
+def get_onsets(x, fs, hop_length = 200, frame_length = 2048):
     time = np.arange(0, source.size/fs,1/fs) # creates a time array
     energy = energy_fun(source, frame_length, hop_length, 1) #gets dB energy of audio
     rmse = rmse_fun(source, frame_length, hop_length, 1) #gets RMS dB energy of audio
-    d_energy=derivative(energy)
-    d_rmse=derivative(rmse)
+    d_energy1=derivative(energy1)
+    d_rmse1=derivative(rmse1)
     # onset detection
-    onset_thresh=.75
+    onset_thresh=.5
 
-    (detection_1, truth_detection_1)=onset_detect(d_rmse, onset_thresh)
-
-    lens=np.where(detection_1>=onset_thresh)[0] # shows indices where theres a peak
-    lengths=[]
-    for x in range(len(lens)):
-        if x==0:
-            lengths[0]==lens[0]
-        else:
-            lengths[x]=lens[x]-lens[x-1]
-
-    # leave  this on for now, swap out when we figure out how to do non-constant block lengths
-
-    if const_block: # finding the most frequent distances between onsets
-        block_lens={}
-        for x in range(len(lengths)):
-            block=lengths[x]
-            if block in block_lens.keys():
-                block_lens[block]+=1
-            else:
-                block_lens[block]=1
-        sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1])
-
-        if(sorted_lens[0][1]==sorted_lens[1][1]):
-            if (sorted_lens[0][0]>sorted_lens[1][0]):
-                return sorted_lens[0][0]*hop_length
-            else:
-                return sorted_lens[1][0]*hop_length
-        else:
-            return sorted_lens[0][0]*hop_length
-
-
-
-
-
-
-
-
+    (detection_1, truth_detection_1)=onset_detect(d_rmse1, onset_thresh)
+    (detection_2, truth_detection_2)=onset_detect(d_energy1, onset_thresh)
 
         

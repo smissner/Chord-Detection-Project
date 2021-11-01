@@ -45,6 +45,9 @@ def computeChromagram(x,blockSize,hopSize,fs):
     a = a/np.max(a)
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
+    a[np.where(f<25)[0]] = a[np.where(f<25)[0]] * 0
+    for i in range(np.where(f>500)[0].size):
+        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(i+1)
     bassf = f[np.where(a>.1)[0][0]]
     if bassf <= .1:
         #if np.where(a>.1).size < 2:
@@ -82,10 +85,11 @@ def computePCP(notes,a):
 def computePCIT(x,blockSize,hopSize,fs = 44100):
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
-    pitchClasses = np.array([0,0,0,0])
+    pitchClasses = np.array([0,0,0,0,0])
     pitchClassPowers = np.array([0,0,0,0])
     for i in range(t.size):
         tempClass, tempPower = computePCP(notes,a[:,i])
+        tempClass = np.concatenate((tempClass,[t[i]]))
         pitchClasses = np.vstack((pitchClasses,tempClass))
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClasses = pitchClasses[1:]
