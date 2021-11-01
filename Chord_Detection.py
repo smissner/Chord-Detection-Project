@@ -47,7 +47,7 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     a[np.where(f<25)[0]] = a[np.where(f<25)[0]] * 0
     for i in range(np.where(f>500)[0].size):
-        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(i+1)
+        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(np.log2(i)+1)
     bassf = f[np.where(a>.1)[0][0]]
     if bassf <= .1:
         #if np.where(a>.1).size < 2:
