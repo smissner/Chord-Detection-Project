@@ -92,6 +92,9 @@ def beatles_check_album(searchPath):
             songname = songname.replace('-', '_-_', 1)
             evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
 
+#searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
+#beatles_check_album(searchPath)
+
 def check_all_albums():
     base = './QMUL_beatles'
     for root, dir, files in os.walk(base):
@@ -106,8 +109,7 @@ def check_all_albums():
             #break;
 
 
-#searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
-#beatles_check_album(searchPath)
+
 check_all_albums()
 
 #def test2():

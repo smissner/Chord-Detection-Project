@@ -39,24 +39,25 @@ def noteName(f,bass,name):
     for i in range(12):
         newnote[i] = note.get(np.mod(freqs.get(name)+i,12))
     return (newnote.get(nAwayFromA,"zDC"))
-def computeChromagram(x,blockSize,hopSize,fs):
+def computeChromagram(x, blockSize, hopSize, fs):
     #Take the spectrogram of our audio data, and normalize it
     f,t,a = sig.spectrogram(x,fs,nperseg = blockSize,noverlap = blockSize - hopSize)
-    a = a/np.max(a)
+    a = a / np.max(a)
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
+
     bassf = f[np.where(a>.1)[0][0]]
+
     if bassf <= .1:
         #if np.where(a>.1).size < 2:
         bassf = .001
         #else: ##Leaving this out for now, will work on it later, this for now shouldn't cause too much issue
          #       bassf = f[np.where(a>.1)[1][0]]
     bassnote = noteName(bassf,440,"A")
-    notes = np.array([])
+    notes = np.zeros(f.size)
     #Create a new note array to replace the frequency array so that we have a chromatic representation of the spectrogram
     for i in range(f.size):
-        tempnote = noteName(f[i],bassf,bassnote)
-        notes = np.append(notes,tempnote)
+        notes[i] = noteName(f[i],bassf,bassnote)
         #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
         #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
         #far from a centralized note
