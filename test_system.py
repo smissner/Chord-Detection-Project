@@ -83,7 +83,7 @@ wav = './chords/stl.wav'
 
 
 def beatles_check_album(searchPath):
-    anont = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/C4DM_beatles_transcriptions"
+    anont = "./QMUL_beatles/C4DM_beatles_transcriptions"
     albumStem = searchPath.split('/')[-1]
     print(albumStem)
     for root, dir, files in os.walk(searchPath):
