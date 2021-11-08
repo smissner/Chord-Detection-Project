@@ -30,47 +30,78 @@ note = {
         10: "G",
         11: "Ab"
     }
+freqs = dict((v, k) for k, v in note.items())
 def noteName(f,bass,name):
     #This function will get the name of a note given a frequency as well as information pertaining to
     #what our bass note frequency is
     nAwayFromA = np.mod(np.round(12*np.log2(f/bass)),12)
-    freqs = dict((v, k) for k, v in note.items())
     newnote = {}
     for i in range(12):
         newnote[i] = note.get(np.mod(freqs.get(name)+i,12))
     return (newnote.get(nAwayFromA,"zDC"))
-def computeChromagram(x, blockSize, hopSize, fs):
+def findTuning(f,a):
+    muse = np.array([])
+    tunedpoints = np.array([440.0])
+    #May be a numpy way to do this hopefully cause this isn't very efficient    
+    while tunedpoints[tunedpoints.size-1] > 1:
+        tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]/1.059463]))
+    while tunedpoints[tunedpoints.size-1] < 9000:
+        tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]*1.059463]))
+    for i in range(a.shape[1]):
+        if np.any(a[:,i]>.2):
+            for j in range(np.asarray(np.where(a[:,i]>.2)).size):
+                newind = (np.abs(f - f[np.where(a[:,i]>.2)[0][j]]*2)).argmin()
+                if a[newind,i] > .1:
+                    muse = np.concatenate((muse,[f[np.where(a[:,i]>.1)[0][j]]]))
+    diff = np.zeros(muse.size)
+    for j in range(muse.size):
+        closeid = (np.abs(tunedpoints - muse[j])).argmin()
+        diff[j] = muse[j] - tunedpoints[closeid] 
+    return 440 * 2**(np.sum(diff)/1200)
+def computeChromagram(x,blockSize,hopSize,fs):
     #Take the spectrogram of our audio data, and normalize it
     f,t,a = sig.spectrogram(x,fs,nperseg = blockSize,noverlap = blockSize - hopSize)
-    a = a / np.max(a)
+    a = a/np.max(a)
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
-
-    bassf = f[np.where(a>.1)[0][0]]
-
-    if bassf <= .1:
-        #if np.where(a>.1).size < 2:
-        bassf = .001
-        #else: ##Leaving this out for now, will work on it later, this for now shouldn't cause too much issue
-         #       bassf = f[np.where(a>.1)[1][0]]
-    bassnote = noteName(bassf,440,"A")
-    notes = np.zeros(f.size)
+    a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
+    for i in range(np.where(f>500)[0].size):
+        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(np.log10(i)+1)
+    tunef = findTuning(f,a)
+    tunenote = "A"
+    notes = np.array([])
+    newa = np.zeros([12,a.shape[1]])
     #Create a new note array to replace the frequency array so that we have a chromatic representation of the spectrogram
+    amps = 0
+    n = 1
+    pretempnote = "zDC"
     for i in range(f.size):
-        notes[i] = noteName(f[i],bassf,bassnote)
+        tempnote = noteName(f[i],tunef,tunenote)
+        notes = np.append(notes,tempnote)
+        if i>0 and notes[i] == notes[i-1]:
+            amps = amps + a[i]
+            n = n + 1
+        else:
+            newa[freqs.get(pretempnote),:] = newa[freqs.get(pretempnote),:] + amps/n
+            amps = 0
+            n = 1
+        pretempnote = tempnote
+        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
+        a[i] = a[i] * qFactor
+
+            
+
         #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
         #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
         #far from a centralized note
 
-        qFactor = 1 - abs(12*np.log2(f[i]/bassf) - np.round(12*np.log2(f[i]/bassf)))
-        a[i] = a[i] * qFactor
-    return [notes,t,a,f]
+
+    return [notes,t,newa,f]
 def computePCP(notes,a):
     #Given a block of our chromagram, find the 4 most prevalent notes and their "power" for the pitch classes
-    cur = notes[0]
     new = np.zeros(12)
     for i in range(new.size):
-        new[i] = np.sum(a[np.where(notes == note[i])])
+        new[i] = np.sum(a[i])
     sorter = new.argsort()
     sort = new[sorter]
     bestFour = note[new.argsort()[new.size-1]]
@@ -83,10 +114,11 @@ def computePCP(notes,a):
 def computePCIT(x,blockSize,hopSize,fs = 44100):
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
-    pitchClasses = np.array([0,0,0,0])
+    pitchClasses = np.array([0,0,0,0,0])
     pitchClassPowers = np.array([0,0,0,0])
     for i in range(t.size):
         tempClass, tempPower = computePCP(notes,a[:,i])
+        tempClass = np.concatenate((tempClass,[t[i]]))
         pitchClasses = np.vstack((pitchClasses,tempClass))
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClasses = pitchClasses[1:]
