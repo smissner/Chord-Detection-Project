@@ -99,28 +99,17 @@ def computeChromagram(x,blockSize,hopSize,fs):
     return [notes,t,newa,f]
 def computePCP(notes,a):
     #Given a block of our chromagram, find the 4 most prevalent notes and their "power" for the pitch classes
-    new = np.zeros(12)
-    for i in range(new.size):
-        new[i] = np.sum(a[i])
-    sorter = new.argsort()
-    sort = new[sorter]
-    bestFour = note[new.argsort()[new.size-1]]
-    power = sort[new.size-1]
-    for i in range(3):
-            bestFour = np.append(bestFour,note[sorter[new.size-i-2]])
-            power = np.append(power,sort[new.size-i-2])
+    power = np.zeros(12)
+    for i in range(power.size):
+        power[i] = np.sum(a[i])
     power = power/np.max(power)
-    return [bestFour,power]
+    return [power]
 def computePCIT(x,blockSize,hopSize,fs = 44100):
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
-    pitchClasses = np.array([0,0,0,0,0])
-    pitchClassPowers = np.array([0,0,0,0])
+    pitchClassPowers = np.zeros(12)
     for i in range(t.size):
-        tempClass, tempPower = computePCP(notes,a[:,i])
-        tempClass = np.concatenate((tempClass,[t[i]]))
-        pitchClasses = np.vstack((pitchClasses,tempClass))
+        tempPower = computePCP(notes,a[:,i])
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
-    pitchClasses = pitchClasses[1:]
     pitchClassPowers = pitchClassPowers[1:]
-    return [pitchClasses,pitchClassPowers,t]
+    return [pitchClassPowers,t]
