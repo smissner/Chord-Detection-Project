@@ -64,18 +64,42 @@ def evaluate_isophonics_wav(csvF, wfilename):
     (fs, signal) = wavfile.read(wfilename)
     #print(fs)
     #print(len(data))
-    signal = np.mean(signal, axis=0)
-    (times, chords) = parse_isophonics_csv(csvF)
+    #print(signal)
+    signal = np.mean(signal, axis=1)
+    #print(signal)
+
+    (antimes, chords) = parse_isophonics_csv(csvF)
 
     blocks = 1024
     hops = blocks
 
-    data = computePCIT(signal, blocks, hops, fs)
+    [pcp, pcpt] = computePCIT(signal, blocks, hops, fs)
     print('annotated data: ')
-    print(chords)
+    #print(chords)
     print('projected data: ')
-    print(data)
-    #TODO: implement chord checking once I run sam's algo.
+
+    idxC = 0;
+    for idxT, time in enumerate(pcpt):
+
+        #print(f"A1: time: {         time}, \t annotated time: {    antimes[idxC][0]}")
+
+
+        if time >= antimes[idxC][0] and time <= antimes[idxC][1]:
+            print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
+            #print(f"A2: res val: {  pcp[idxT]}, \t annotated val: {antimes[idxC]}")
+            #check result here!
+        tempidxC = idxC
+        while (idxC < len(antimes) and time >= antimes[idxC][1]):
+            print(idxC)
+            idxC += 1
+
+        if tempidxC != idxC and time >= antimes[idxC][0] and time <= antimes[idxC][1]:
+            print(f"B1: res time: { time}, \t annotated time: {    antimes[idxC]}")
+            #print(f"B2: res val: {  pcp[idxT]}, \t annotated val: { antimes[idxC]}")
+            #check result here!
+
+
+    
 
 txt = './chords/stl.txt'
 wav = './chords/stl.wav'
@@ -90,10 +114,12 @@ def beatles_check_album(searchPath):
         for waveFile in filter(lambda a: 'wav' in a, files):
             songname = waveFile.split('.')[0]
             songname = songname.replace('-', '_-_', 1)
+
+            print(songname)
             evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
 
-#searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
-#beatles_check_album(searchPath)
+searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
+beatles_check_album(searchPath)
 
 def check_all_albums():
     base = './QMUL_beatles'
@@ -110,7 +136,7 @@ def check_all_albums():
 
 
 
-check_all_albums()
+#check_all_albums()
 
 #def test2():
 
