@@ -30,6 +30,20 @@ note = {
         10: "G",
         11: "Ab"
     }
+npnote = np.array([
+         "A",
+         "Bb",
+         "B",
+         "C",
+         "Db",
+         "D",
+         "Eb",
+         "E",
+         "F",
+         "Gb",
+         "G",
+         "Ab"
+    ])
 freqs = dict((v, k) for k, v in note.items())
 def noteName(f,bass,name):
     #This function will get the name of a note given a frequency as well as information pertaining to
@@ -42,7 +56,7 @@ def noteName(f,bass,name):
 def findTuning(f,a):
     muse = np.array([])
     tunedpoints = np.array([440.0])
-    #May be a numpy way to do this hopefully cause this isn't very efficient    
+    #May be a numpy way to do this hopefully cause this isn't very efficient
     while tunedpoints[tunedpoints.size-1] > 1:
         tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]/1.059463]))
     while tunedpoints[tunedpoints.size-1] < 9000:
@@ -56,7 +70,7 @@ def findTuning(f,a):
     diff = np.zeros(muse.size)
     for j in range(muse.size):
         closeid = (np.abs(tunedpoints - muse[j])).argmin()
-        diff[j] = muse[j] - tunedpoints[closeid] 
+        diff[j] = muse[j] - tunedpoints[closeid]
     return 440 * 2**(np.sum(diff)/1200)
 def computeChromagram(x,blockSize,hopSize,fs):
     #Take the spectrogram of our audio data, and normalize it
@@ -89,7 +103,7 @@ def computeChromagram(x,blockSize,hopSize,fs):
         qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
         a[i] = a[i] * qFactor
 
-            
+
 
         #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
         #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
@@ -104,6 +118,7 @@ def computePCP(notes,a):
         power[i] = np.sum(a[i])
     power = power/np.max(power)
     return [power]
+
 def computePCIT(x,blockSize,hopSize,fs = 44100):
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
@@ -113,3 +128,7 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClassPowers = pitchClassPowers[1:]
     return [pitchClassPowers,t]
+
+def findchordnotes(pitchClassPowers, pitchcount):
+    indexes = np.array(np.argpartition(pitchClassPowers, -pitchcount)[-pitchcount:])
+    return (npnote[indexes], pitchClassPowers[indexes])

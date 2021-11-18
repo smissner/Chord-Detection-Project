@@ -1,10 +1,11 @@
 from Chord_Detection import computePCIT
-
+from Chord_Detection import findchordnotes
 import os
 import numpy as np
 import scipy as sp
 from scipy.io import wavfile
 
+import music21 as m
 
 ## this section is for chordify  / mcgill billboard integration, put on the backburner for now
 
@@ -59,6 +60,33 @@ def parse_isophonics_csv(filename):
     chords = np.array(chords)
     return (times, chords)
 
+def compareannotationswithpcp(annots, pcp):
+    #print(annots)
+    #print(pcp)
+    #pcp[pcp <= .4] = 0
+    values, weights= findchordnotes(pcp, 5)
+
+    chords = {}
+    curr = []
+    for i in range(len(weights)):
+        indx = np.argmax(weights)
+        curr += values[indx]
+        #print(weights)
+        chd = m.chord.Chord(curr)
+        chd.simplifyEnharmonics(inPlace = True)
+        chd.sortAscending(inPlace  = True)
+        name = chd.pitchedCommonName
+        values = np.delete(values, indx)
+        weights = np.delete(weights, indx)
+        if i >= 3:
+            if (name in chords):
+                chords[name] += 1
+            else:
+                chords[name] = 1
+    print(annots, "\t", chords)
+
+
+
 def evaluate_isophonics_wav(csvF, wfilename):
 
     (fs, signal) = wavfile.read(wfilename)
@@ -74,32 +102,40 @@ def evaluate_isophonics_wav(csvF, wfilename):
     hops = blocks
 
     [pcp, pcpt] = computePCIT(signal, blocks, hops, fs)
-    print('annotated data: ')
+    #print('annotated data: ')
     #print(chords)
-    print('projected data: ')
+    #print('projected data: ')
 
+    printtime = False
     idxC = 0;
+    #count = 0
     for idxT, time in enumerate(pcpt):
 
         #print(f"A1: time: {         time}, \t annotated time: {    antimes[idxC][0]}")
 
 
         if time >= antimes[idxC][0] and time <= antimes[idxC][1]:
-            print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
+            if (printtime):
+                print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
+            compareannotationswithpcp(chords[idxC], pcp[idxT])
             #print(f"A2: res val: {  pcp[idxT]}, \t annotated val: {antimes[idxC]}")
             #check result here!
         tempidxC = idxC
         while (idxC < len(antimes) and time >= antimes[idxC][1]):
-            print(idxC)
+            #print(idxC)
             idxC += 1
 
         if tempidxC != idxC and time >= antimes[idxC][0] and time <= antimes[idxC][1]:
-            print(f"B1: res time: { time}, \t annotated time: {    antimes[idxC]}")
+        #    print(count)
+        #    count = 0
+            if (printtime):
+                print(f"B1: res time: { time}, \t annotated time: {    antimes[idxC]}")
             #print(f"B2: res val: {  pcp[idxT]}, \t annotated val: { antimes[idxC]}")
             #check result here!
+        #else:
+        #    count += 1
 
 
-    
 
 txt = './chords/stl.txt'
 wav = './chords/stl.wav'
