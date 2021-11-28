@@ -1,10 +1,10 @@
 from Chord_Detection import computePCIT
 from Chord_Detection import findchordnotes
+from onset_detection import get_onsets
 import os
 import numpy as np
 import scipy as sp
 from scipy.io import wavfile
-
 import music21 as m
 
 ## this section is for chordify  / mcgill billboard integration, put on the backburner for now
@@ -98,8 +98,12 @@ def evaluate_isophonics_wav(csvF, wfilename):
 
     (antimes, chords) = parse_isophonics_csv(csvF)
 
-    blocks = 1024
-    hops = blocks
+    on_detect_hop=256
+    on_detect_frame=512
+    onset_thresh=.7
+    blocks=get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
+    #      get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75)
+    hops = blocks/2
 
     [pcp, pcpt] = computePCIT(signal, blocks, hops, fs)
     #print('annotated data: ')

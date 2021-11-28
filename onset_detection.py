@@ -6,6 +6,14 @@ import scipy.signal as sig
 import numpy as np
 import math
 
+
+######## IDEAS FOR IMPROVEMENT:
+        # Use filterbanks, filter certain freqs out
+            # maybe try lpf first since bass normal;y keeps tempo in pop (bass, kick)
+        # use some sort of novelty function based on a difference measure in energy with HWR
+
+
+
 def energy_fun(x, frame_length=1024, hop_length=512, log=0):
     if log==0:
         e = np.array([
@@ -46,7 +54,7 @@ def set_threshold(ac, pts=10): # gives option to pick the N largest onsets inste
     set_thresh=ac[pts-1]
     return set_thresh
 
-def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
+def get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75):
 
     # this function takes in the raw audio file and either determines an optimal window length depending on the spacing between all of the onsets 
     # or returns window  lengths for each window for chord detection based on spacing between all of the onsets
@@ -60,7 +68,6 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
     d_energy=derivative(energy)
     d_rmse=derivative(rmse)
     # onset detection
-    onset_thresh=.75
 
     (detection_1, truth_detection_1)=onset_detect(d_rmse, onset_thresh)
 
@@ -72,25 +79,22 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
         else:
             lengths[x]=lens[x]-lens[x-1]
 
-    # leave  this on for now, swap out when we figure out how to do non-constant block lengths
-
-    if const_block: # finding the most frequent distances between onsets
-        block_lens={}
-        for x in range(len(lengths)):
-            block=lengths[x]
-            if block in block_lens.keys():
-                block_lens[block]+=1
-            else:
-                block_lens[block]=1
-        sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1])
-
-        if(sorted_lens[0][1]==sorted_lens[1][1]):
-            if (sorted_lens[0][0]>sorted_lens[1][0]):
-                return sorted_lens[0][0]*hop_length
-            else:
-                return sorted_lens[1][0]*hop_length
+    block_lens={}
+    for x in range(len(lengths)):
+        block=lengths[x]
+        if block in block_lens.keys():
+            block_lens[block]+=1
         else:
+            block_lens[block]=1
+    sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1]) # sorts by the 
+
+    if(sorted_lens[0][1]==sorted_lens[1][1]):
+        if (sorted_lens[0][0]>sorted_lens[1][0]):
             return sorted_lens[0][0]*hop_length
+        else:
+            return sorted_lens[1][0]*hop_length
+    else:
+        return sorted_lens[0][0]*hop_length
 
 
 
