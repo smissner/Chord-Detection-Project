@@ -140,6 +140,7 @@ def correlateChords(notes, flag_7):
             [1,0,0,0,1,0,0,0,1,0,0,0], # aug
             [1,0,0,1,0,0,1,0,0,0,0,0]  # dim
             ])
+    return flag_7
 
 
 def findchordnotes(pitchClassPowers, pitchcount):
