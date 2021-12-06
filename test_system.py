@@ -158,7 +158,7 @@ def beatles_check_album(searchPath):
             print(songname)
             evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
 
-searchPath = "/Users/andreaspaljug/Documents/gtFall2021/MUSI-Analysis/proj/Chord-Detection-Project/QMUL_beatles/01_-_Please_Please_Me"
+searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
 beatles_check_album(searchPath)
 
 def check_all_albums():
