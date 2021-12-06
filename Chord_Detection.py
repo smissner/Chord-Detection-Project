@@ -1,21 +1,9 @@
-
-#Gonna throw everything important for interfacing purposes up here. All the functions here are compiled together into
-#that final, computePCIT(Pitch Classes In Time) function. This function will input an audio information as well as the desired
-#block and hop sizes. The output will be 1) An array of blocks where each block contain the four most prevalent notes as type
-#numpy_str, 2) An array of blocks where each value in the block corresponds to the individual prevalence of their corresponding
-#notes, and 3) An array of timestamps for each block.
-
-
-#An example of an output would be pc,pcp,t: Where pc[0] could be ['G', 'E', 'C', 'B'] and pcp[0] could be [1.,0.80,0.77,0.11]
-#This would tell us that, at the first block, G E C and B are the four most prevalent notes, but the G E and C are significantly
-#more prevalent than the B, and so we would probably want to ignore that B(I found .2 to be a pretty decent cutoff for significance)
-#So, we would want our chord reader to think of this as a Cmaj chord without a 7th, which is what I inputted to get this
-
 import scipy as sci
 import scipy.io.wavfile as wav
 import scipy.signal as sig
 import numpy as np
 import matplotlib.pyplot as plt
+#Instantiate static variables
 note = {
         0: "A",
         1: "Bb",
@@ -30,20 +18,6 @@ note = {
         10: "G",
         11: "Ab"
     }
-npnote = np.array([
-         "A",
-         "Bb",
-         "B",
-         "C",
-         "Db",
-         "D",
-         "Eb",
-         "E",
-         "F",
-         "Gb",
-         "G",
-         "Ab"
-    ])
 freqs = dict((v, k) for k, v in note.items())
 def noteName(f,bass,name):
     #This function will get the name of a note given a frequency as well as information pertaining to
@@ -53,25 +27,37 @@ def noteName(f,bass,name):
     for i in range(12):
         newnote[i] = note.get(np.mod(freqs.get(name)+i,12))
     return (newnote.get(nAwayFromA,"zDC"))
+def get_spectral_peaks(a,numPeaks):
+    a = a**2
+    peaks = np.zeros(numPeaks)
+    for i in range(a.shape[1]):
+        currentPeaks = sig.find_peaks(a[:,i])
+        mask = np.zeros(a.shape[0])
+        mask[currentPeaks[0]] = 1
+        a[:,i] = a[:,i] * mask
+    maxpeakf = np.zeros(a.shape[0])
+    for j in range(a.shape[0]):
+        maxpeakf[j] = np.max(a[j,:])
+    for k in range(numPeaks):
+        peaks[k] = np.argmax(maxpeakf)
+        maxpeakf[np.argmax(maxpeakf)] = 0
+    return np.asarray(peaks,dtype = int)
+
+
+
 def findTuning(f,a):
-    muse = np.array([])
+    peaks = get_spectral_peaks(a,50)
     tunedpoints = np.array([440.0])
-    #May be a numpy way to do this hopefully cause this isn't very efficient
+    #May be a numpy way to do this hopefully cause this isn't very efficient    
     while tunedpoints[tunedpoints.size-1] > 1:
         tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]/1.059463]))
     while tunedpoints[tunedpoints.size-1] < 9000:
         tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]*1.059463]))
-    for i in range(a.shape[1]):
-        if np.any(a[:,i]>.2):
-            for j in range(np.asarray(np.where(a[:,i]>.2)).size):
-                newind = (np.abs(f - f[np.where(a[:,i]>.2)[0][j]]*2)).argmin()
-                if a[newind,i] > .1:
-                    muse = np.concatenate((muse,[f[np.where(a[:,i]>.1)[0][j]]]))
-    diff = np.zeros(muse.size)
-    for j in range(muse.size):
-        closeid = (np.abs(tunedpoints - muse[j])).argmin()
-        diff[j] = muse[j] - tunedpoints[closeid]
-    return 440 * 2**(np.sum(diff)/1200)
+    diff = np.zeros(peaks.size)
+    for j in range(peaks.size):
+        closeid = (np.abs(tunedpoints - f[peaks[j]])).argmin()
+        diff[j] = 1200*np.log2(f[peaks[j]]/tunedpoints[closeid])
+    return 440 * 2**(diff[np.argmax(abs(diff))]/1200)
 def computeChromagram(x,blockSize,hopSize,fs):
     #Take the spectrogram of our audio data, and normalize it
     f,t,a = sig.spectrogram(x,fs,nperseg = blockSize,noverlap = blockSize - hopSize)
@@ -92,6 +78,14 @@ def computeChromagram(x,blockSize,hopSize,fs):
     for i in range(f.size):
         tempnote = noteName(f[i],tunef,tunenote)
         notes = np.append(notes,tempnote)
+        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
+        a[i] = a[i] * qFactor
+
+            
+
+        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
+        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
+        #far from a centralized note
         if i>0 and notes[i] == notes[i-1]:
             amps = amps + a[i]
             n = n + 1
@@ -100,14 +94,6 @@ def computeChromagram(x,blockSize,hopSize,fs):
             amps = 0
             n = 1
         pretempnote = tempnote
-        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
-        a[i] = a[i] * qFactor
-
-
-
-        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
-        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
-        #far from a centralized note
 
 
     return [notes,t,newa,f]
@@ -118,7 +104,6 @@ def computePCP(notes,a):
         power[i] = np.sum(a[i])
     power = power/np.max(power)
     return [power]
-
 def computePCIT(x,blockSize,hopSize,fs = 44100):
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
@@ -128,6 +113,7 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClassPowers = pitchClassPowers[1:]
     return [pitchClassPowers,t]
+
 
 def findchordnotes(pitchClassPowers, pitchcount):
     indexes = np.array(np.argpartition(pitchClassPowers, -pitchcount)[-pitchcount:])
