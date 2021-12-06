@@ -72,7 +72,7 @@ def compareannotationswithpcp(annots, pcp):
         indx = np.argmax(weights)
         curr += values[indx]
         #print(weights)
-        chd = m.chord.Chord(curr)
+        chd = m.chord.Chord(curr) # swap this out for correlation function
         chd.simplifyEnharmonics(inPlace = True)
         chd.sortAscending(inPlace  = True)
         name = chd.pitchedCommonName

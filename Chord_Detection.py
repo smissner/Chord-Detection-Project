@@ -115,6 +115,33 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
     return [pitchClassPowers,t]
 
 
+def correlateChords(notes, flag_7):
+    # do correlation of the chromagram with masks for different chord labels
+
+    # making the masks
+    if flag_7:
+        chord_masks=np.array([
+            [1,0,0,0,1,0,0,1,0,0,0,0], # maj
+            [1,0,0,1,0,0,0,1,0,0,0,0], # min
+            [1,0,0,0,1,0,0,0,1,0,0,0], # aug
+            [1,0,0,1,0,0,1,0,0,0,0,0], # dim
+            [1,0,0,0,1,0,0,1,0,0,0,1], # maj7
+            [1,0,0,0,1,0,0,1,0,0,1,0], # dom7
+            [1,0,0,1,0,0,0,1,0,0,1,0], # min7
+            [1,0,0,1,0,0,1,0,0,0,1,0], # halfdim7
+            [1,0,0,1,0,0,1,0,0,1,0,0], # dim7
+            [1,0,0,0,1,0,0,0,1,0,1,0], # aug7
+            [1,0,0,1,0,0,0,1,0,0,0,1], # minmaj7
+            ])
+    else:
+        chord_masks=np.array([
+            [1,0,0,0,1,0,0,1,0,0,0,0], # maj
+            [1,0,0,1,0,0,0,1,0,0,0,0], # min
+            [1,0,0,0,1,0,0,0,1,0,0,0], # aug
+            [1,0,0,1,0,0,1,0,0,0,0,0]  # dim
+            ])
+
+
 def findchordnotes(pitchClassPowers, pitchcount):
     indexes = np.array(np.argpartition(pitchClassPowers, -pitchcount)[-pitchcount:])
     return (npnote[indexes], pitchClassPowers[indexes])

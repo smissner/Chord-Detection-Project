@@ -57,14 +57,13 @@ def set_threshold(ac, pts=10): # gives option to pick the N largest onsets inste
 def get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75):
 
     # this function takes in the raw audio file and either determines an optimal window length depending on the spacing between all of the onsets 
-    # or returns window  lengths for each window for chord detection based on spacing between all of the onsets
-        # constant window length done, varying window length in progress
+        # constant window length done
 
     # leave const_block on for now, 0 is for if we can figure out how to do non constant block lengths
 
-    time = np.arange(0, source.size/fs,1/fs) # creates a time array
-    energy = energy_fun(source, frame_length, hop_length, 1) #gets dB energy of audio
-    rmse = rmse_fun(source, frame_length, hop_length, 1) #gets RMS dB energy of audio
+    time = np.arange(0, x.size/fs,1/fs) # creates a time array
+    energy = energy_fun(x, frame_length, hop_length, 1) #gets dB energy of audio
+    rmse = rmse_fun(x, frame_length, hop_length, 1) #gets RMS dB energy of audio
     d_energy=derivative(energy)
     d_rmse=derivative(rmse)
     # onset detection
