@@ -83,8 +83,9 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
-    for i in range(np.where(f>500)[0].size):
-        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(np.log10(i)+1)
+    env = np.logspace(1,0,np.where(f>500)[0].size)
+    for i in range(t.size):
+        a[np.where(f>500)][:,i] = a[np.where(f>500)][:,i] *env
     tunef = findTuning(f,a)
     tunenote = "A"
     notes = np.array([])
@@ -94,6 +95,17 @@ def computeChromagram(x,blockSize,hopSize,fs):
     n = 1
     pretempnote = "zDC"
     for i in range(f.size):
+        
+        
+        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
+        a[i] = a[i] * qFactor
+
+
+
+        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
+        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
+        #far from a centralized note
+
         tempnote = noteName(f[i],tunef,tunenote)
         notes = np.append(notes,tempnote)
         if i>0 and notes[i] == notes[i-1]:
@@ -104,14 +116,6 @@ def computeChromagram(x,blockSize,hopSize,fs):
             amps = 0
             n = 1
         pretempnote = tempnote
-        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
-        a[i] = a[i] * qFactor
-
-
-
-        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
-        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
-        #far from a centralized note
 
 
     return [notes,t,newa,f]
