@@ -95,6 +95,17 @@ def computeChromagram(x,blockSize,hopSize,fs):
     n = 1
     pretempnote = "zDC"
     for i in range(f.size):
+        
+        
+        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
+        a[i] = a[i] * qFactor
+
+
+
+        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
+        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
+        #far from a centralized note
+
         tempnote = noteName(f[i],tunef,tunenote)
         notes = np.append(notes,tempnote)
         if i>0 and notes[i] == notes[i-1]:
@@ -105,14 +116,6 @@ def computeChromagram(x,blockSize,hopSize,fs):
             amps = 0
             n = 1
         pretempnote = tempnote
-        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
-        a[i] = a[i] * qFactor
-
-
-
-        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
-        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
-        #far from a centralized note
 
 
     return [notes,t,newa,f]
