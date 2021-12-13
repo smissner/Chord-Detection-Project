@@ -87,17 +87,18 @@ def compareannotationswithpcp(annots, pcp):
                 chords[name] = 1
     print(annots, "\t", chords)
 
-def compareannotationswithpcpwithcustomchorddetect(annots, pcp):
+def compareannotationswithpcpwithcustomchorddetect(annots, pcp, sevenths):
     #print(annots)
     #print(pcp)
     #pcp[pcp <= .4] = 0
     #values, weights= findchordnotes(pcp, 5)
-
-    correlateChords(pcp, False)
+    result = correlateChords(pcp, sevenths)
+    #print(annots, result)
+    return result
     #print(annots, "\t", chords)
 
 
-def evaluate_isophonics_wav(csvF, wfilename):
+def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
     #print('starting next song', csvF, wfilename)
     (fs, signal) = wavfile.read(wfilename)
     #print(fs)
@@ -105,7 +106,6 @@ def evaluate_isophonics_wav(csvF, wfilename):
     #print(signal)
     signal = np.mean(signal, axis=1)
     #print(signal)
-
     (antimes, chords) = parse_isophonics_csv(csvF)
 
     on_detect_hop=256
@@ -123,17 +123,90 @@ def evaluate_isophonics_wav(csvF, wfilename):
     printtime = False
     idxC = 0;
     #count = 0
+
+    accuracyBase = 0
+    accuracyTriadQuality = 0
+    totalBaseEvaluated = 0
+    totalTriadsQualEvaluated = 0
+    everything = 0
+    everythinTotalEvaluated = 0
     for idxT, time in enumerate(pcpt):
 
         #print(f"A1: time: {         time}, \t annotated time: {    antimes[idxC][0]}")
 
 
         if time >= antimes[idxC][0] and time <= antimes[idxC][1]:
-            if (printtime):
-                print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
-            compareannotationswithpcpwithcustomchorddetect(chords[idxC], pcp[idxT])
+            #if (printtime):
+                #print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
+            result = compareannotationswithpcpwithcustomchorddetect(chords[idxC], pcp[idxT], sevenths)
+
+
+
             #print(f"A2: res val: {  pcp[idxT]}, \t annotated val: {antimes[idxC]}")
             #check result here!
+
+            baseRes, baseQual = result.split(':')
+            splitChord = chords[idxC].split(':')
+            baseChord = splitChord[0]
+
+            if baseChord != 'N':
+                triadCorrect = False
+                if len(splitChord) > 1:
+                    quality = splitChord[1].split('/')[0] #remove the bass note annotations
+                    if not quality.isdigit():
+                        if (baseQual.lower() == quality):
+                            #print("MATCH:",baseQual.lower())
+                            accuracyTriadQuality += 1
+                            triadCorrect = True
+                        totalTriadsQualEvaluated += 1
+                    else:
+                        if (quality == baseQual):
+                            print("MATCH:",baseQual)
+                            accuracyTriadQuality += 1
+                            triadCorrect = True
+                        totalTriadsQualEvaluated += 1
+
+                else:
+                    if (baseQual.lower() == 'maj'):
+                        #print("MATCH:",baseQual.lower())
+                        accuracyTriadQuality += 1
+                        triadCorrect = True
+                    totalTriadsQualEvaluated += 1
+
+                if (baseChord == baseRes):
+                    #print("MATCH:",baseChord)
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                elif (baseChord =='A#' and baseRes == "Bb"):
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                    #A# Bfl,
+                elif (baseChord =='C#' and baseRes == "Db"):
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                    #c# dflat,
+                elif (baseChord =='D#' and baseRes == "Eb"):
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                    #d#, e flat,
+                elif (baseChord =='F#' and baseRes == "Gb"):
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                    #f#, g flat,
+                elif (baseChord =='G#' and baseRes == "Ab"):
+                    accuracyBase += 1
+                    if (triadCorrect):
+                        everything += 1
+                    #g#, a flat,
+
+                totalBaseEvaluated += 1
+                everythinTotalEvaluated += 1
+
         tempidxC = idxC
         while (idxC < len(antimes) and time >= antimes[idxC][1]):
             #print(idxC)
@@ -148,8 +221,16 @@ def evaluate_isophonics_wav(csvF, wfilename):
             #check result here!
         #else:
         #    count += 1
+    everythingAvg, averageBase, averageQual = 0, 0, 0
+    if (totalBaseEvaluated != 0):
+        averageBase = accuracyBase / totalBaseEvaluated
+    if (totalTriadsQualEvaluated != 0):
+        averageQual = accuracyTriadQuality / totalTriadsQualEvaluated
 
-
+    if (everythinTotalEvaluated != 0):
+        everythingAvg = everything /everythinTotalEvaluated
+    print(everythingAvg, averageBase, averageQual)
+    return [accuracyBase, totalBaseEvaluated, accuracyTriadQuality, totalTriadsQualEvaluated, everything, everythinTotalEvaluated]
 
 txt = './chords/stl.txt'
 wav = './chords/stl.wav'
@@ -160,18 +241,35 @@ def beatles_check_album(searchPath):
     anont = "./QMUL_beatles/C4DM_beatles_transcriptions"
     albumStem = searchPath.split('/')[-1]
     print(albumStem)
+    accuracy = [0]*6
     for root, dir, files in os.walk(searchPath):
         for waveFile in filter(lambda a: 'wav' in a, files):
             songname = waveFile.split('.')[0]
             print(f"begining {songname}")
             songname = songname.replace('-', '_-_', 1)
 
-            evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
+            temp_acc =  evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
+            for i, a in enumerate(temp_acc):
+                accuracy[i] += a
 
+    everythingAvg, averageBase, averageQual = 0, 0, 0
+    if (accuracy[1] != 0):
+        averageBase = accuracy[0] / accuracy[1]
+    if (accuracy[3] != 0):
+        averageQual = accuracy[2] / accuracy[3]
+    if (accuracy[5] != 0):
+        everythingAvg = accuracy[4] / accuracy[5]
+    print(everythingAvg, averageBase, averageQual)
+    return everythingAvg, averageBase, averageQual
 searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
+#searchPath = "./QMUL_beatles/05_-_Help"
+#searchPath = "./QMUL_beatles/07_-_Revolver"
+
+
 beatles_check_album(searchPath)
 
 def check_all_albums():
+    accuracy = [0]*6
     base = './QMUL_beatles'
     for root, dir, files in os.walk(base):
         #albumStem = searchPath.split('/')[-1]
@@ -179,10 +277,20 @@ def check_all_albums():
         for waveFile in filter(lambda a: 'wav' in a, files):
             songname = waveFile.split('.')[0]
             songname = songname.replace('-', '_-_', 1)
-            evaluate_isophonics_wav(f"./QMUL_beatles/C4DM_beatles_transcriptions/{root.split('/')[2]}/{songname}.lab", f"{root}/{waveFile}")
+            temp_acc = evaluate_isophonics_wav(f"./QMUL_beatles/C4DM_beatles_transcriptions/{root.split('/')[2]}/{songname}.lab", f"{root}/{waveFile}")
+            for i, a in enumerate(temp_acc):
+                accuracy[i] += a
 
+    everythingAvg, averageBase, averageQual = 0, 0, 0
+    if (accuracy[1] != 0):
+        averageBase = accuracy[0] / accuracy[1]
+    if (accuracy[3] != 0):
+        averageQual = accuracy[2] / accuracy[3]
+    if (accuracy[5] != 0):
+        everythingAvg = accuracy[4] / accuracy[5]
+    print(everythingAvg, averageBase, averageQual)
+    return everythingAvg, averageBase, averageQual
 
-            #break;
 
 
 
