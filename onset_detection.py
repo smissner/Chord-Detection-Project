@@ -5,6 +5,8 @@ import scipy.io.wavfile as wav
 import scipy.signal as sig
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+
 
 def energy_fun(x, frame_length=1024, hop_length=512, log=0):
     if log==0:
@@ -25,7 +27,7 @@ def energy_fun(x, frame_length=1024, hop_length=512, log=0):
     return [pitchClasses,pitchClassPowers,t]
 
 def rmse_fun(x, frame_length=1024, hop_length=512, log =0):
-    e = energy_fun(x, frame_length, hop_length)
+    e = energy_fun(x, frame_length, hop_length, log)
     e = np.sqrt(e / len(e))
     return e / np.max(e)
 
@@ -52,7 +54,9 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
     # or returns window  lengths for each window for chord detection based on spacing between all of the onsets
         # constant window length done, varying window length in progress
 
-    # leave const_block on for now, 0 is for if we can figure out how to do non constant block lengths
+    # issue: silence at the begninning/end of a song  is thorowing this as well as chromogram function
+    song_inds=np.where(x!=0)
+    x=x[song_inds[0][0]:song_inds[0][-1]]
 
     time = np.arange(0, x.size/fs,1/fs) # creates a time array
     energy = energy_fun(x, frame_length, hop_length, 1) #gets dB energy of audio
@@ -60,7 +64,15 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
     d_energy=derivative(energy)
     d_rmse=derivative(rmse)
     # onset detection
-    onset_thresh=.75
+
+    
+    #onset_thresh=.75
+    onset_thresh=set_threshold(d_rmse)
+
+    
+    d_rmse=d_rmse[1:]
+    d_energy=d_energy[1:]
+
 
     (detection_1, truth_detection_1)=onset_detect(d_rmse, onset_thresh)
 
@@ -72,8 +84,6 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
         else:
             lengths.append(lens[x]-lens[x-1])
 
-    # leave  this on for now, swap out when we figure out how to do non-constant block lengths
-
     if const_block: # finding the most frequent distances between onsets
         block_lens={}
         for x in range(len(lengths)):
@@ -83,7 +93,6 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
             else:
                 block_lens[block]=1
         sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1])
-
         if(sorted_lens[0][1]==sorted_lens[1][1]):
             if (sorted_lens[0][0]>sorted_lens[1][0]):
                 return sorted_lens[0][0]*hop_length

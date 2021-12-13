@@ -161,9 +161,7 @@ def correlateChords(notes, flag_7):
             ]
 
     # arrays of chord and key names for use with the euclidean distance matrix later
-    #keys=np.array(["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"]) # columns
-    keys=np.array(["A","Bb","B","C","Db","D","Eb","E","F","Gb","G","Ab"]) # columns - alt version with flats instead of sharps
-    chords=np.array(["Maj","Min","Aug","Dim","Maj7","7","Min7","Aug7","Minmaj7","Halfdim7","Dim7"]) # rows
+    chords=np.array(["maj","min","aug","dim","maj7","7","min7","aug7","minmaj7","halfdim7","dim7"]) # rows
 
     corrs=np.ones([len(chord_masks), 12])
     
@@ -181,11 +179,11 @@ def correlateChords(notes, flag_7):
         # need to find indices of the minimun value in the matrix
     best_dist=np.amax(abs(corrs))
     result = np.where(corrs == best_dist) # finds the indices for the best matching chord
- #   if len(result[0])==1:
-    print(result)
-    best_chord=keys[result[1][0]]+":"+chords[result[0][0]] # making the chord name
- #   else:
- #       best_chord="N"
+    if len(result[0])==1:
+        print(result)
+        best_chord=npnote[result[1][0]]+":"+chords[result[0][0]] # making the chord name
+    else:
+        best_chord="N"
     print(best_chord)
     return best_chord
     #return (best_chord, best_dist) # return the name of the detected chord along with the euclidean distance for the chord just in case
