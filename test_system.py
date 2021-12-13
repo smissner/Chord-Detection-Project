@@ -88,7 +88,7 @@ def compareannotationswithpcp(annots, pcp):
 
 
 def evaluate_isophonics_wav(csvF, wfilename):
-
+    #print('starting next song', csvF, wfilename)
     (fs, signal) = wavfile.read(wfilename)
     #print(fs)
     #print(len(data))
@@ -101,7 +101,7 @@ def evaluate_isophonics_wav(csvF, wfilename):
     on_detect_hop=256
     on_detect_frame=512
     onset_thresh=.7
-    blocks=get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
+    blocks = get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
     #      get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75)
     hops = blocks/2
 
@@ -153,9 +153,9 @@ def beatles_check_album(searchPath):
     for root, dir, files in os.walk(searchPath):
         for waveFile in filter(lambda a: 'wav' in a, files):
             songname = waveFile.split('.')[0]
+            print(f"begining {songname}")
             songname = songname.replace('-', '_-_', 1)
 
-            print(songname)
             evaluate_isophonics_wav(f"{anont}/{albumStem}/{songname}.lab", f"{searchPath}/{waveFile}")
 
 searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
