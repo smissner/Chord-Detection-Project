@@ -16,6 +16,7 @@ import scipy.io.wavfile as wav
 import scipy.signal as sig
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial import distance as edist
 note = {
         0: "A",
         1: "Bb",
@@ -128,6 +129,63 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClassPowers = pitchClassPowers[1:]
     return [pitchClassPowers,t]
+
+def correlateChords(notes, flag_7):
+    print(notes)
+    # does cross correlation between the chromagram and masks for chords
+    if 0: # if we want to try 7th chords
+        chord_masks=[
+            [1,0,0,0,0,0,0,1,0,0,0,0], # power chord (just root--5)
+            [1,0,0,0,1,0,0,1,0,0,0,0], # maj
+            [1,0,0,1,0,0,0,1,0,0,0,0], # min
+            [1,0,0,0,1,0,0,0,1,0,0,0], # aug
+            [1,0,0,1,0,0,1,0,0,0,0,0], # dim
+            [1,0,0,0,1,0,0,1,0,0,0,1], # maj7
+            [1,0,0,0,1,0,0,1,0,0,1,0], # dom7
+            [1,0,0,1,0,0,0,1,0,0,1,0], # min7
+            [1,0,0,0,1,0,0,0,1,0,1,0], # aug7
+            [1,0,0,1,0,0,0,1,0,0,0,1], # minmaj7
+            [1,0,0,1,0,0,1,0,0,0,1,0], # halfdim7
+            [1,0,0,1,0,0,1,0,0,1,0,0], # dim7
+            ]
+    else: # just triads
+        chord_masks=[
+            [1,0,0,0,0,0,0,1,0,0,0,0], # power chord (just root--5)
+            [1,0,0,0,1,0,0,1,0,0,0,0], # maj
+            [1,0,0,1,0,0,0,1,0,0,0,0], # min
+            [1,0,0,0,1,0,0,0,1,0,0,0], # aug
+            [1,0,0,1,0,0,1,0,0,0,0,0], # dim
+            ]
+
+    
+
+    #print("hi, these are the notes")
+    #print(notes)
+
+    # arrays of chord and key names for use with the euclidean distance matrix later
+    keys=np.array(["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]) # columns
+    # keys=np.array(["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"]) # columns - alt version with flats instead of sharps
+    chords=np.array([" ","Maj","Min","Aug","Dim","Maj7","7","Min7","Aug7","Minmaj7","Halfdim7","Dim7"]) # rows
+
+    corrs=np.ones([len(chord_masks), 12])
+    
+    for y in range(len(chord_masks)):
+        mask=np.array(chord_masks[y])
+        for x in range(12):
+            #corrs[y,x]=edist.euclidean(np.array(notes,dtype='int64'), np.array(np.roll(mask, x),dtype='int64')) # maybe replace with sum(corr) if euclidean doesnt work
+            corrs[y,x]=plt.xcorr(np.array(notes,dtype='int64'), np.array(np.roll(mask, x),dtype='int64')) # trying with cross correlation
+
+    # should now have a matrix of euclidean distances, indices correspond to the key(column) and chord type (row)
+        # need to find indices of the minimun value in the matrix
+    best_dist=np.amin(corrs)
+    result = np.where(corrs == best_dist) # indices of smallest
+    print(corrs)
+    best_chord=keys[result[1]]+chords[result[0]] # making the chord name
+    return best_chord
+    #return (best_chord, best_dist) # return the name of the detected chord along with the euclidean distance for the chord just in case
+
+
+
 
 def findchordnotes(pitchClassPowers, pitchcount):
     indexes = np.array(np.argpartition(pitchClassPowers, -pitchcount)[-pitchcount:])

@@ -1,6 +1,8 @@
 from Chord_Detection import computePCIT
 from Chord_Detection import findchordnotes
+from Chord_Detection import correlateChords
 from onset_detection import get_onsets
+
 import os
 import numpy as np
 import scipy as sp
@@ -85,6 +87,14 @@ def compareannotationswithpcp(annots, pcp):
                 chords[name] = 1
     print(annots, "\t", chords)
 
+def compareannotationswithpcpwithcustomchorddetect(annots, pcp):
+    #print(annots)
+    #print(pcp)
+    #pcp[pcp <= .4] = 0
+    #values, weights= findchordnotes(pcp, 5)
+
+    correlateChords(pcp, False)
+    #print(annots, "\t", chords)
 
 
 def evaluate_isophonics_wav(csvF, wfilename):
@@ -106,7 +116,7 @@ def evaluate_isophonics_wav(csvF, wfilename):
     hops = blocks/2
 
     [pcp, pcpt] = computePCIT(signal, blocks, hops, fs)
-    #print('annotated data: ')
+    print('annotated data: ')
     #print(chords)
     #print('projected data: ')
 
@@ -121,7 +131,7 @@ def evaluate_isophonics_wav(csvF, wfilename):
         if time >= antimes[idxC][0] and time <= antimes[idxC][1]:
             if (printtime):
                 print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
-            compareannotationswithpcp(chords[idxC], pcp[idxT])
+            compareannotationswithpcpwithcustomchorddetect(chords[idxC], pcp[idxT])
             #print(f"A2: res val: {  pcp[idxT]}, \t annotated val: {antimes[idxC]}")
             #check result here!
         tempidxC = idxC
