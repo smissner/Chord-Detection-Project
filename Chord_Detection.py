@@ -83,8 +83,9 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
-    for i in range(np.where(f>500)[0].size):
-        a[np.where(f>500)[0][i]] = a[np.where(f>500)[0][i]] * 1/(np.log10(i)+1)
+    env = np.logspace(1,0,np.where(f>500)[0].size)
+    for i in range(t.size):
+        a[np.where(f>500)][:,i] = a[np.where(f>500)][:,i] *env
     tunef = findTuning(f,a)
     tunenote = "A"
     notes = np.array([])
@@ -94,6 +95,17 @@ def computeChromagram(x,blockSize,hopSize,fs):
     n = 1
     pretempnote = "zDC"
     for i in range(f.size):
+        
+        
+        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
+        a[i] = a[i] * qFactor
+
+
+
+        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
+        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
+        #far from a centralized note
+
         tempnote = noteName(f[i],tunef,tunenote)
         notes = np.append(notes,tempnote)
         if i>0 and notes[i] == notes[i-1]:
@@ -104,14 +116,6 @@ def computeChromagram(x,blockSize,hopSize,fs):
             amps = 0
             n = 1
         pretempnote = tempnote
-        qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
-        a[i] = a[i] * qFactor
-
-
-
-        #This qFactor will hopefully work to make out of tune notes not mess with our data(say someone in the recording plays
-        #a really sharp c, we don't want that being recorded as a Db). Works by reducing the value of notes in frequency bins
-        #far from a centralized note
 
 
     return [notes,t,newa,f]
@@ -134,7 +138,7 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
     return [pitchClassPowers,t]
 
 def correlateChords(notes, flag_7):
-    print(notes)
+    #print(notes)
     # does cross correlation between the chromagram and masks for chords
     if flag_7: # if we want to try 7th chords
         chord_masks=[
@@ -164,7 +168,7 @@ def correlateChords(notes, flag_7):
     chords=np.array(["maj","min","aug","dim","maj7","7","min7","aug7","minmaj7","halfdim7","dim7"]) # rows
 
     corrs=np.ones([len(chord_masks), 12])
-    
+
     for y in range(len(chord_masks)):
         mask=np.array(chord_masks[y])
         for x in range(12):
@@ -172,19 +176,21 @@ def correlateChords(notes, flag_7):
             #corrs[y,x]=np.correlate(np.array(notes,dtype='int64'), np.array(np.roll(mask, x),dtype='int64')) # trying numpy correlation function- getting weird results
 
             # writing my own correlation function because I am kinda frustrated
-            autocorr_sig=mask[:12-x] 
+            autocorr_sig=mask[:12-x]
             corrs[y,x]=np.dot(notes[x:], autocorr_sig)
 
     # should now have a matrix of euclidean distances, indices correspond to the key(column) and chord type (row)
         # need to find indices of the minimun value in the matrix
     best_dist=np.amax(abs(corrs))
     result = np.where(corrs == best_dist) # finds the indices for the best matching chord
+
     if len(result[0])==1:
         print(result)
         best_chord=npnote[result[1][0]]+":"+chords[result[0][0]] # making the chord name
     else:
         best_chord="N"
     print(best_chord)
+
     return best_chord
     #return (best_chord, best_dist) # return the name of the detected chord along with the euclidean distance for the chord just in case
 

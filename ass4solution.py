@@ -12,6 +12,30 @@ KEYGT = './key_tf/key_eval/GT/'
 TFAUDIO = './key_tf/tuning_eval/audio/'
 TFGT = './key_tf/tuning_eval/GT/'
 
+
+
+"""
+
+LERCH NOTES:
+
+DONE! i think.
+[-2.5] get_spectral_peaks: can not handle the case of less than 20 peaks,
+but more importantly: a high value is not a peak!
+
+DONE!
+[-1] estimate_tuning_freq: your bin to freq equation is off,
+replace with
+spectral_peaks_hz = np.array(spectral_peak_columns) * fs / 2.0 / (np.shape(spectogram)[0]-1)
+
+
+FUCK
+[-2] estimate_tuning_freq: it's fine to use np.histogram, however, you have to use it correctly.
+First, you do not want the histogram bins to change based on the audio input,
+so you want to predefine them. Second, hist[1] contains the *bin edges*,
+not the bin centers!
+
+
+"""
 """
 
 
@@ -89,7 +113,9 @@ def get_spectral_peaks(X):
     #return np.array(np.argpartition(X, -20)[-20:])
     peaks = np.zeros((X.shape[1],20))
     for i in range (X.shape[1]):
-        peaks[i] = np.array(np.argpartition(X[:,i], -20)[-20:])
+        #old
+        #peaks[i] = np.array(np.argpartition(X[:,i], -20)[-20:])
+        peaks[i] = np.array(np.argwhere(X[:,i] == 1.0))
     return peaks
 
 """
@@ -111,7 +137,8 @@ def estimate_tuning_freq(x, blockSize, hopSize, fs):
 
     spectogram = compute_spectrogram(xb)
     spectral_peak_columns = get_spectral_peaks(spectogram)
-    spectral_peaks_hz = np.array(spectral_peak_columns) * fs / 2.0 / (np.shape(spectogram)[0])
+    spectral_peaks_hz = np.array(spectral_peak_columns) * fs / 2.0 / (np.shape(spectogram)[0]-1)
+
     spectral_peaks_cents = convert_freq2cents(spectral_peaks_hz)
     nearest_cents = np.round(spectral_peaks_cents, -2)
     deviation =np.subtract(spectral_peaks_cents.flatten(), nearest_cents.flatten())
