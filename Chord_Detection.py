@@ -83,9 +83,11 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
+    ####Filter Envelope#####
     env = np.logspace(1,0,np.where(f>500)[0].size)
     for i in range(t.size):
         a[np.where(f>500)][:,i] = a[np.where(f>500)][:,i] *env
+    #########################
     tunef = findTuning(f,a)
     tunenote = "A"
     notes = np.array([])
