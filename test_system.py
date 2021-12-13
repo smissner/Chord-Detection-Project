@@ -105,6 +105,9 @@ def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
     #print(len(data))
     #print(signal)
     signal = np.mean(signal, axis=1)
+
+    # trying normalizing audio data
+    signal=signal/np.mean(signal)
     #print(signal)
     (antimes, chords) = parse_isophonics_csv(csvF)
 
