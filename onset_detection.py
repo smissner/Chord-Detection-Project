@@ -14,9 +14,17 @@ def energy_fun(x, frame_length=1024, hop_length=512, log=0):
         sum(abs(x[i:i+frame_length]**2))
         for i in range(0, len(x), hop_length)])
     else:
-        e = np.array([ 
-        20*math.log(sum(abs(x[i:i+frame_length]**2)), 10)
-        for i in range(0, len(x), hop_length)])
+        try:
+            e = np.array([ 
+            20*math.log(sum(abs(x[i:i+frame_length]**2)), 10) # still getting issues
+            for i in range(0, len(x), hop_length)])
+        except:
+            e = np.array([
+            sum(abs(x[i:i+frame_length]**2))
+            for i in range(0, len(x), hop_length)])
+            for z in range(len(e)):
+                if e[z]!= 0:
+                    e[z]=20*math.log(e[z], 10)
 
     # converts energy from magnitude to dB - 20*math.log(sum(abs(x[i:i+frame_length]**2)), 10)
     # og version without the dB conversion sum(abs(x[i:i+frame_length]**2))
