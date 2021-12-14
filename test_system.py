@@ -97,6 +97,8 @@ def compareannotationswithpcpwithcustomchorddetect(annots, pcp, sevenths):
     return result
     #print(annots, "\t", chords)
 
+def check_chord_name(result ):
+    print()
 
 def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
     #print('starting next song', csvF, wfilename)
@@ -138,7 +140,7 @@ def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
         #print(f"A1: time: {         time}, \t annotated time: {    antimes[idxC][0]}")
 
 
-        if time >= antimes[idxC][0] and time <= antimes[idxC][1]:
+        if idxC < len(antimes) and time >= antimes[idxC][0] and time <= antimes[idxC][1]:
             #if (printtime):
                 #print(f"A1: res time: { time}, \t annotated time window: {    antimes[idxC]}")
             result = compareannotationswithpcpwithcustomchorddetect(chords[idxC], pcp[idxT], sevenths)
@@ -147,75 +149,74 @@ def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
 
             #print(f"A2: res val: {  pcp[idxT]}, \t annotated val: {antimes[idxC]}")
             #check result here!
+            if result != 'N':
+                baseRes, baseQual = result.split(':')
+                splitChord = chords[idxC].split(':')
+                baseChord = splitChord[0]
 
-            baseRes, baseQual = result.split(':')
-            splitChord = chords[idxC].split(':')
-            baseChord = splitChord[0]
+                if baseChord != 'N':
+                    triadCorrect = False
+                    if len(splitChord) > 1:
+                        quality = splitChord[1].split('/')[0] #remove the bass note annotations
+                        if not quality.isdigit():
+                            if (baseQual.lower() == quality):
+                                #print("MATCH:",baseQual.lower())
+                                accuracyTriadQuality += 1
+                                triadCorrect = True
+                            totalTriadsQualEvaluated += 1
+                        else:
+                            if (quality == baseQual):
+                                print("MATCH:",baseQual)
+                                accuracyTriadQuality += 1
+                                triadCorrect = True
+                            totalTriadsQualEvaluated += 1
 
-            if baseChord != 'N':
-                triadCorrect = False
-                if len(splitChord) > 1:
-                    quality = splitChord[1].split('/')[0] #remove the bass note annotations
-                    if not quality.isdigit():
-                        if (baseQual.lower() == quality):
+                    else:
+                        if (baseQual.lower() == 'maj'):
                             #print("MATCH:",baseQual.lower())
                             accuracyTriadQuality += 1
                             triadCorrect = True
                         totalTriadsQualEvaluated += 1
-                    else:
-                        if (quality == baseQual):
-                            print("MATCH:",baseQual)
-                            accuracyTriadQuality += 1
-                            triadCorrect = True
-                        totalTriadsQualEvaluated += 1
 
-                else:
-                    if (baseQual.lower() == 'maj'):
-                        #print("MATCH:",baseQual.lower())
-                        accuracyTriadQuality += 1
-                        triadCorrect = True
-                    totalTriadsQualEvaluated += 1
+                    if (baseChord == baseRes):
+                        #print("MATCH:",baseChord)
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                    elif (baseChord =='A#' and baseRes == "Bb"):
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                        #A# Bfl,
+                    elif (baseChord =='C#' and baseRes == "Db"):
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                        #c# dflat,
+                    elif (baseChord =='D#' and baseRes == "Eb"):
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                        #d#, e flat,
+                    elif (baseChord =='F#' and baseRes == "Gb"):
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                        #f#, g flat,
+                    elif (baseChord =='G#' and baseRes == "Ab"):
+                        accuracyBase += 1
+                        if (triadCorrect):
+                            everything += 1
+                        #g#, a flat,
 
-                if (baseChord == baseRes):
-                    #print("MATCH:",baseChord)
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                elif (baseChord =='A#' and baseRes == "Bb"):
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                    #A# Bfl,
-                elif (baseChord =='C#' and baseRes == "Db"):
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                    #c# dflat,
-                elif (baseChord =='D#' and baseRes == "Eb"):
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                    #d#, e flat,
-                elif (baseChord =='F#' and baseRes == "Gb"):
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                    #f#, g flat,
-                elif (baseChord =='G#' and baseRes == "Ab"):
-                    accuracyBase += 1
-                    if (triadCorrect):
-                        everything += 1
-                    #g#, a flat,
-
-                totalBaseEvaluated += 1
-                everythinTotalEvaluated += 1
+                    totalBaseEvaluated += 1
+                    everythinTotalEvaluated += 1
 
         tempidxC = idxC
         while (idxC < len(antimes) and time >= antimes[idxC][1]):
             #print(idxC)
             idxC += 1
-
-        if tempidxC != idxC and time >= antimes[idxC][0] and time <= antimes[idxC][1]:
+        if tempidxC != idxC and idxC >= 0 and idxC < len(antimes) and time >= antimes[idxC][0] and time <= antimes[idxC][1]:
         #    print(count)
         #    count = 0
             if (printtime):
@@ -264,8 +265,8 @@ def beatles_check_album(searchPath):
         everythingAvg = accuracy[4] / accuracy[5]
     print(everythingAvg, averageBase, averageQual)
     return everythingAvg, averageBase, averageQual
-searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
-#searchPath = "./QMUL_beatles/05_-_Help"
+#searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
+searchPath = "./QMUL_beatles/05_-_Help"
 #searchPath = "./QMUL_beatles/07_-_Revolver"
 
 

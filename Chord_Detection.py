@@ -83,9 +83,11 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
     #slightly I've found, and due to possible complications this process creates, we may want to remove it.
     a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
+    """
     env = np.logspace(1,0,np.where(f>500)[0].size)
     for i in range(t.size):
-        a[np.where(f>500)][:,i] = a[np.where(f>500)][:,i] *env
+        a[np.where(f>500)][:,i] = a[np.where(f>500)][:,i] * env
+    """
     tunef = findTuning(f,a)
     tunenote = "A"
     notes = np.array([])
@@ -95,8 +97,8 @@ def computeChromagram(x,blockSize,hopSize,fs):
     n = 1
     pretempnote = "zDC"
     for i in range(f.size):
-        
-        
+
+
         qFactor = 1 - abs(12*np.log2(f[i]/tunef) - np.round(12*np.log2(f[i]/tunef)))
         a[i] = a[i] * qFactor
 
@@ -185,11 +187,11 @@ def correlateChords(notes, flag_7):
     result = np.where(corrs == best_dist) # finds the indices for the best matching chord
 
     if len(result[0])==1:
-        print(result)
+        #print(result)
         best_chord=npnote[result[1][0]]+":"+chords[result[0][0]] # making the chord name
     else:
         best_chord="N"
-    print(best_chord)
+    #print(best_chord)
 
     return best_chord
     #return (best_chord, best_dist) # return the name of the detected chord along with the euclidean distance for the chord just in case
