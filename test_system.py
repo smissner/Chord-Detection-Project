@@ -114,11 +114,11 @@ def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
     on_detect_hop=256
     on_detect_frame=512
     onset_thresh=.7
-    blocks, peak_array = get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
-    #      get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75)
+    blocks, peak_array = get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh) # returns optimal block length and peak locations in samples
+        #      get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75)
     hops = blocks/2
 
-    [pcp, pcpt] = computePCIT(signal, blocks, hops, fs)
+    [pcp, pcpt] = computePCIT(signal, blocks, hops, peak_array, fs)
     print('annotated data: ')
     #print(chords)
     #print('projected data: ')

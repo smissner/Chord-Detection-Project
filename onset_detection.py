@@ -94,7 +94,6 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
             lengths.append(lens[0])
         else:
             lengths.append(lens[x]-lens[x-1])
-
     if const_block: # finding the most frequent distances between onsets
         block_lens={}
         for x in range(len(lengths)):
@@ -106,8 +105,8 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
         sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1])
         if(sorted_lens[0][1]==sorted_lens[1][1]): #issue
             if (sorted_lens[0][0]>sorted_lens[1][0]):
-                return (sorted_lens[0][0]*hop_length, , onset_indices_1*hop_length) # returns the average distance between peaks and the location of each detected peak in samples
+                return (sorted_lens[0][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 
             else:
-                return (sorted_lens[1][0]*hop_length, , onset_indices_1*hop_length) # returns the average distance between peaks and the location of each detected peak in samples
+                return (sorted_lens[1][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 
         else:
-            return (sorted_lens[0][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks and the location of each detected peak in samples
+            return (sorted_lens[0][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 
