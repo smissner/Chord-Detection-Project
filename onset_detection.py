@@ -88,15 +88,12 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
     (detection_1, onset_indices_1)=onset_detect(d_rmse, onset_thresh)
 
     lens=np.where(detection_1>0)[0] # shows indices where theres a peak
-    print(lens) ############
     lengths = []
     for x in range(len(lens)):
         if x==0:
             lengths.append(lens[0])
         else:
             lengths.append(lens[x]-lens[x-1])
-
-    print(lengths)##########
 
     if const_block: # finding the most frequent distances between onsets
         block_lens={}

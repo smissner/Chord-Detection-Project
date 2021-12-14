@@ -114,7 +114,7 @@ def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
     on_detect_hop=256
     on_detect_frame=512
     onset_thresh=.7
-    blocks = get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
+    blocks, peak_array = get_onsets(signal, fs, on_detect_hop, on_detect_frame, onset_thresh)
     #      get_onsets(x, fs, hop_length = 256, frame_length = 512, onset_thresh=.75)
     hops = blocks/2
 
