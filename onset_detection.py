@@ -14,7 +14,7 @@ def energy_fun(x, frame_length=1024, hop_length=512, log=0):
         sum(abs(x[i:i+frame_length]**2))
         for i in range(0, len(x), hop_length)])
     else:
-        e = np.array([
+        e = np.array([ 
         20*math.log(sum(abs(x[i:i+frame_length]**2)), 10)
         for i in range(0, len(x), hop_length)])
 
@@ -31,17 +31,30 @@ def rmse_fun(x, frame_length=1024, hop_length=512, log =0):
     e = np.sqrt(e / len(e))
     return e / np.max(e)
 
-def derivative(x):
-    d = np.abs(x[1:] - x[:len(x)-1])
-    return d / np.max(d)
+def derivative(x,fs_sig):
+    # used to compute novelty functions
+    d = x[1:] - x[:len(x)-1] # derivative/novelty
+    # smooth the derivative function
+    crit_freq=fs_sig/50
+    filt =sig.butter(10, crit_freq, fs=fs_sig, output='sos') # low pass filter for smoothing set to fs/4 
+    d = sig.sosfilt(filt, d) # applying the filter
+    d[np.where(d<0)]=0 #HWR
+    d=d / np.max(d) # normalizes data
+    return d
 
 def onset_detect(sound, thresh=.8):
-    detect= [x if x>=thresh else 0 for x in sound] # finds each audio sample with a magnitude above a threshold
-    #truth_detect= detect>=thresh # boolean matrix of detect matrix
-    detect=np.array(detect)
 
-    truth_detect= [True if x else False for x in sound]
-    return detect, truth_detect
+    # old peak detection algorithm, leaving here just in case
+    #detect= [x if x>=thresh else 0 for x in sound] # finds each audio sample with a magnitude above a threshold
+    #detect[np.where(detect!=0)[0]]=0 # throws out the first peak 
+    #truth_detect= detect>=thresh # boolean matrix of detect matrix
+
+    # new peak detection 
+    peak_locs=sig.find_peaks(sound,height=0)[0][1:]
+    detect=np.zeros(sound.shape)
+    detect[peak_locs]=sound[peak_locs] 
+    detect=detect/np.ndarray.max(detect)
+    return detect, peak_locs
 
 def set_threshold(ac, pts=10): # gives option to pick the N largest onsets instead of setting with a threshold
     ac=np.sort(ac)[::-1]
@@ -56,34 +69,31 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
 
     # issue: silence at the begninning/end of a song  is thorowing this as well as chromogram function
     song_inds=np.where(x!=0)
-    x=x[song_inds[0][0]:song_inds[0][-1]]
+    x=x[song_inds[0][0]:song_inds[0][-1]] # strips zeros at the beginning and end of the audio data
 
     time = np.arange(0, x.size/fs,1/fs) # creates a time array
     energy = energy_fun(x, frame_length, hop_length, 1) #gets dB energy of audio
     rmse = rmse_fun(x, frame_length, hop_length, 1) #gets RMS dB energy of audio
-    d_energy=derivative(energy)
-    d_rmse=derivative(rmse)
+
+    #d_energy=derivative(energy,fs) # smoothed, HWR'ed novelty function for energy, have the energy in here as an alternative feature to look at for onsets
+    d_rmse=derivative(rmse,fs) # smoothed, HWR'ed novelty function for rms energy
     # onset detection
 
-    
-    #onset_thresh=.75
-    onset_thresh=set_threshold(d_rmse)
 
+    onset_thresh=set_threshold(d_rmse, 30) # picks the x number of the highest peaks to use for calculating a block length
     
     d_rmse=d_rmse[1:]
-    d_energy=d_energy[1:]
+    #d_energy=d_energy[1:] 
 
+    (detection_1, onset_indices_1)=onset_detect(d_rmse, onset_thresh)
 
-    (detection_1, truth_detection_1)=onset_detect(d_rmse, onset_thresh)
-
-    lens=np.where(detection_1>=onset_thresh)[0] # shows indices where theres a peak
+    lens=np.where(detection_1>0)[0] # shows indices where theres a peak
     lengths = []
     for x in range(len(lens)):
         if x==0:
             lengths.append(lens[0])
         else:
             lengths.append(lens[x]-lens[x-1])
-
     if const_block: # finding the most frequent distances between onsets
         block_lens={}
         for x in range(len(lengths)):
@@ -93,10 +103,10 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
             else:
                 block_lens[block]=1
         sorted_lens=sorted(block_lens.items(), key = lambda x:-x[1])
-        if(sorted_lens[0][1]==sorted_lens[1][1]):
+        if(sorted_lens[0][1]==sorted_lens[1][1]): #issue
             if (sorted_lens[0][0]>sorted_lens[1][0]):
-                return sorted_lens[0][0]*hop_length
+                return (sorted_lens[0][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 
             else:
-                return sorted_lens[1][0]*hop_length
+                return (sorted_lens[1][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 
         else:
-            return sorted_lens[0][0]*hop_length
+            return (sorted_lens[0][0]*hop_length, onset_indices_1*hop_length) # returns the average distance between peaks in samples and the location of each detected peak 

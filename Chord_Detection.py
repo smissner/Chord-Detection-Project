@@ -129,7 +129,8 @@ def computePCP(notes,a):
     power = power/np.max(power)
     return [power]
 
-def computePCIT(x,blockSize,hopSize,fs = 44100):
+def computePCIT(x,blockSize,hopSize, peak_array, fs = 44100):
+    # time stamps is an array input that contains every point where an onset was detected
     #Compile everything above together
     notes,t,a,f = computeChromagram(x,blockSize,hopSize,fs)
     pitchClassPowers = np.zeros(12)
@@ -137,7 +138,18 @@ def computePCIT(x,blockSize,hopSize,fs = 44100):
         tempPower = computePCP(notes,a[:,i])
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClassPowers = pitchClassPowers[1:]
-    return [pitchClassPowers,t]
+    # averaging chromagram estimates between peaks
+    time_peaks=peak_array/fs # converts peak indices into time indices
+    block_peaks=peak_array/hopSize # converts peak indices into hop indices corresponding to the computed block size
+    avgd_chroma_blocks=np.zeros((len(block_peaks), 12))
+    for z in range(len(block_peaks)):
+        if z==len(block_peaks):
+            avgd_chroma_blocks[z,:]=np.average(pitchClassPowers[round(block_peaks[z]-1):], axis=0)
+        elif z==0:
+            avgd_chroma_blocks[z,:]=np.average(pitchClassPowers[0:round(block_peaks[z])], axis=0)
+        else:
+            avgd_chroma_blocks[z,:]=np.average(pitchClassPowers[round(block_peaks[z]-1):round(block_peaks[z])], axis=0)
+    return [avgd_chroma_blocks,time_peaks]
 
 def correlateChords(notes, flag_7):
     #print(notes)
@@ -191,7 +203,7 @@ def correlateChords(notes, flag_7):
         best_chord=npnote[result[1][0]]+":"+chords[result[0][0]] # making the chord name
     else:
         best_chord="N"
-    #print(best_chord)
+    print(best_chord)
 
     return best_chord
     #return (best_chord, best_dist) # return the name of the detected chord along with the euclidean distance for the chord just in case
