@@ -50,7 +50,7 @@ def derivative(x,fs_sig):
     d=d / np.max(d) # normalizes data
     return d
 
-def onset_detect(sound, thresh=.8):
+def onset_detect(sound, thresh_pts=100):
 
     # old peak detection algorithm, leaving here just in case
     #detect= [x if x>=thresh else 0 for x in sound] # finds each audio sample with a magnitude above a threshold
@@ -60,14 +60,27 @@ def onset_detect(sound, thresh=.8):
     # new peak detection 
     peak_locs=sig.find_peaks(sound,height=0)[0][1:]
     detect=np.zeros(sound.shape)
-    detect[peak_locs]=sound[peak_locs] 
+    detect[peak_locs]=sound[peak_locs]
+    # finding the x highest peak value for thresholding
+    ac=np.sort(detect)[::-1]
+    set_thresh=ac[thresh_pts-1] 
+
+    detect[np.where(detect<set_thresh)]=0
     detect=detect/np.ndarray.max(detect)
+    peak_locs=sig.find_peaks(detect,height=0)[0][1:]
+    #plt.plot(sound)
+    #plt.plot(peak_locs, sound[peak_locs], "x")
+    #plt.xlabel("block (hop length")
+    #plt.ylabel("Amplitude of Smoothed Novelty Function (RMS dB)")
+    #plt.title("Novelty function with detected peaks highlighted")
+    #plt.show()
     return detect, peak_locs
 
-def set_threshold(ac, pts=10): # gives option to pick the N largest onsets instead of setting with a threshold
-    ac=np.sort(ac)[::-1]
-    set_thresh=ac[pts-1]
-    return set_thresh
+#def set_threshold(ac, pts=10): # gives option to pick the N largest onsets instead of setting with a threshold
+ #   ac=np.sort(ac)[::-1]
+  #  set_thresh=ac[pts-1]
+   # print(set_thresh)
+    #return set_thresh
 
 def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
 
@@ -86,14 +99,10 @@ def get_onsets(x, fs, hop_length = 256, frame_length = 512, const_block=1):
     #d_energy=derivative(energy,fs) # smoothed, HWR'ed novelty function for energy, have the energy in here as an alternative feature to look at for onsets
     d_rmse=derivative(rmse,fs) # smoothed, HWR'ed novelty function for rms energy
     # onset detection
+    #onset_thresh=set_threshold(d_rmse, 5000) # picks the x number of the highest peaks to use for calculating a block length
 
-
-    onset_thresh=set_threshold(d_rmse, 30) # picks the x number of the highest peaks to use for calculating a block length
+    (detection_1, onset_indices_1)=onset_detect(d_rmse, 200)
     
-    d_rmse=d_rmse[1:]
-    #d_energy=d_energy[1:] 
-
-    (detection_1, onset_indices_1)=onset_detect(d_rmse, onset_thresh)
 
     lens=np.where(detection_1>0)[0] # shows indices where theres a peak
     lengths = []

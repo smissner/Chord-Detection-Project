@@ -100,7 +100,7 @@ def compareannotationswithpcpwithcustomchorddetect(annots, pcp, sevenths):
 def check_chord_name(result ):
     print()
 
-def evaluate_isophonics_wav(csvF, wfilename, sevenths=False):
+def evaluate_isophonics_wav(csvF, wfilename, sevenths=True):
     #print('starting next song', csvF, wfilename)
     (fs, signal) = wavfile.read(wfilename)
     #print(fs)
@@ -266,7 +266,8 @@ def beatles_check_album(searchPath):
     print(everythingAvg, averageBase, averageQual)
     return everythingAvg, averageBase, averageQual
 #searchPath = "./QMUL_beatles/01_-_Please_Please_Me"
-searchPath = "./QMUL_beatles/05_-_Help"
+searchPath = "./QMUL_beatles/11_-_Abbey_Road"
+#searchPath = "./QMUL_beatles/08_-_Sgt_Peppers_Lonely_Hearts_Club_Band"
 #searchPath = "./QMUL_beatles/07_-_Revolver"
 
 

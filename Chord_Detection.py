@@ -138,6 +138,15 @@ def computePCIT(x,blockSize,hopSize, peak_array, fs = 44100):
         tempPower = computePCP(notes,a[:,i])
         pitchClassPowers = np.vstack((pitchClassPowers,tempPower))
     pitchClassPowers = pitchClassPowers[1:]
+
+    # plotting chromagram for visualization
+    #plotting_chroma = [[pitchClassPowers[j][i] for j in range(len(pitchClassPowers))] for i in range(len(pitchClassPowers[0]))]
+    #plt.imshow(plotting_chroma, cmap='gray_r', aspect='auto', origin='lower')
+    #plt.ylabel("notes")
+    #plt.yticks(np.arange(12), 'A Bb B C Db D Eb E F Gb G Ab'.split())
+    #plt.xlabel("time")
+    #plt.title("Chromagram with constant blocks")
+    #plt.show()
     # averaging chromagram estimates between peaks
     time_peaks=peak_array/fs # converts peak indices into time indices
     block_peaks=peak_array/hopSize # converts peak indices into hop indices corresponding to the computed block size
@@ -149,6 +158,14 @@ def computePCIT(x,blockSize,hopSize, peak_array, fs = 44100):
             avgd_chroma_blocks[z,:]=np.average(pitchClassPowers[0:round(block_peaks[z])], axis=0)
         else:
             avgd_chroma_blocks[z,:]=np.average(pitchClassPowers[round(block_peaks[z]-1):round(block_peaks[z])], axis=0)
+    #plotting_chroma_avg = [[avgd_chroma_blocks[j][i] for j in range(len(avgd_chroma_blocks))] for i in range(len(avgd_chroma_blocks[0]))]
+    #plt.imshow(plotting_chroma_avg, cmap='gray_r', aspect='auto', origin='lower')
+    #plt.ylabel("notes")
+    #plt.yticks(np.arange(12), 'A Bb B C Db D Eb E F Gb G Ab'.split())
+    #plt.xlabel("time")
+    ##plt.xticks(time_peaks)
+    #plt.title("Chromagram with averaged blocks")
+    #plt.show()
     return [avgd_chroma_blocks,time_peaks]
 
 def correlateChords(notes, flag_7):
