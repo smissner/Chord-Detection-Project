@@ -1,15 +1,4 @@
 
-#Gonna throw everything important for interfacing purposes up here. All the functions here are compiled together into
-#that final, computePCIT(Pitch Classes In Time) function. This function will input an audio information as well as the desired
-#block and hop sizes. The output will be 1) An array of blocks where each block contain the four most prevalent notes as type
-#numpy_str, 2) An array of blocks where each value in the block corresponds to the individual prevalence of their corresponding
-#notes, and 3) An array of timestamps for each block.
-
-
-#An example of an output would be pc,pcp,t: Where pc[0] could be ['G', 'E', 'C', 'B'] and pcp[0] could be [1.,0.80,0.77,0.11]
-#This would tell us that, at the first block, G E C and B are the four most prevalent notes, but the G E and C are significantly
-#more prevalent than the B, and so we would probably want to ignore that B(I found .2 to be a pretty decent cutoff for significance)
-#So, we would want our chord reader to think of this as a Cmaj chord without a 7th, which is what I inputted to get this
 
 import scipy as sci
 import scipy.io.wavfile as wav
@@ -59,12 +48,13 @@ def noteName(f,bass,name):
 def findTuning(f,a):
     muse = np.array([])
     tunedpoints = np.array([440.0])
-    #May be a numpy way to do this hopefully cause this isn't very efficient
+    #Create an array of tuned notes on the equal tempered scale. This brute force method is suprisingly fast!
     while tunedpoints[tunedpoints.size-1] > 1:
         tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]/1.059463]))
     while tunedpoints[tunedpoints.size-1] < 9000:
         tunedpoints = np.concatenate((tunedpoints,[tunedpoints[tunedpoints.size-1]*1.059463]))
     for i in range(a.shape[1]):
+        #Given high points, calculate the distance from a tuned not and average them for the tuning frequency
         if np.any(a[:,i]>.2):
             for j in range(np.asarray(np.where(a[:,i]>.2)).size):
                 newind = (np.abs(f - f[np.where(a[:,i]>.2)[0][j]]*2)).argmin()
@@ -80,8 +70,7 @@ def computeChromagram(x,blockSize,hopSize,fs):
     #Take the spectrogram of our audio data, and normalize it
     f,t,a = sig.spectrogram(x,fs,nperseg = blockSize,noverlap = blockSize - hopSize)
     a = a/np.max(a)
-    #Create a tuning bassline given the lowest prevalent note in the audio. This process seems to be helpful, but only very
-    #slightly I've found, and due to possible complications this process creates, we may want to remove it.
+    #Apply filtering envelope. Hard cutoff lowpass, log based rolloff on highpass
     a[np.where(f<80)[0]] = a[np.where(f<80)[0]] * 0
     """
     env = np.logspace(1,0,np.where(f>500)[0].size)
@@ -96,6 +85,7 @@ def computeChromagram(x,blockSize,hopSize,fs):
     amps = 0
     n = 1
     pretempnote = "zDC"
+    #Get note bins from frequency bins
     for i in range(f.size):
 
 
